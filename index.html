@@ -2193,6 +2193,13 @@ function positionCard(){
   memCard.setAttribute('data-pos', above ? 'above' : 'below');
 }
 function openCard(day){
+  day = Math.floor(day);
+  if (isNaN(day)) return;
+  if (day > curDay){
+    /* 未到这一天：不许提前打开留言 */
+    toast('还没到第 ' + day + ' 天，先好好过今天吧。');
+    return;
+  }
   cardDay = clampN(day, 1, G_N);
   var i = cardDay - 1;
   selectedIdx = i;
@@ -2225,13 +2232,13 @@ galC.addEventListener('click', function(e){
   Sound.tap();
 });
 
-on(memPrev, 'click', function(e){ e.stopPropagation(); openCard(cardDay - 1 < 1 ? G_N : cardDay - 1); Sound.tap(); });
-on(memNext, 'click', function(e){ e.stopPropagation(); openCard(cardDay + 1 > G_N ? 1 : cardDay + 1); Sound.tap(); });
+on(memPrev, 'click', function(e){ e.stopPropagation(); openCard(cardDay - 1 < 1 ? curDay : cardDay - 1); Sound.tap(); });
+on(memNext, 'click', function(e){ e.stopPropagation(); openCard(cardDay + 1 > curDay ? 1 : cardDay + 1); Sound.tap(); });
 on(memToday, 'click', function(e){ e.stopPropagation(); openCard(curDay); Sound.tap(); });
 on(memRand, 'click', function(e){
   e.stopPropagation();
-  var d = 1 + ((Math.random() * G_N) | 0);
-  if (d === cardDay) d = d % G_N + 1;
+  var d = 1 + ((Math.random() * curDay) | 0);
+  if (d === cardDay) d = d % curDay + 1;
   openCard(d); Sound.tap();
 });
 
@@ -2243,10 +2250,14 @@ function updateHover(){
   var i = nearestStar(hoverX, hoverY);
   if (i >= 0){
     var p = pts[i];
-    galTipText.textContent = '第 ' + p.day + ' 天' + (p.hasNote ? ' · 有一句话' : '');
+    if (p.visited){
+      galTipText.textContent = '第 ' + p.day + ' 天' + (p.hasNote ? ' · 有一句话' : '');
+    } else {
+      galTipText.textContent = '第 ' + p.day + ' 天 · 还没到这一天';
+    }
     setT(galTip, 'translate3d(' + (p.x * GW + GZ - 10 + px * 10).toFixed(1) + 'px,' + (p.y * GH + GZ - 26 + py * 10).toFixed(1) + 'px,0) translate(-50%,-100%)');
     galTip.classList.add('on');
-    galC.style.cursor = 'pointer';
+    galC.style.cursor = p.visited ? 'pointer' : '';
   } else {
     galTip.classList.remove('on');
     galC.style.cursor = '';
@@ -3003,8 +3014,8 @@ on(doc, 'keydown', function(e){
     if (cardOpen) closeCard();
   }
   if (!cardOpen) return;
-  if (e.keyCode === 37) openCard(cardDay - 1 < 1 ? G_N : cardDay - 1);
-  if (e.keyCode === 39) openCard(cardDay + 1 > G_N ? 1 : cardDay + 1);
+  if (e.keyCode === 37) openCard(cardDay - 1 < 1 ? curDay : cardDay - 1);
+  if (e.keyCode === 39) openCard(cardDay + 1 > curDay ? 1 : cardDay + 1);
 });
 function outsideDown(e){
   if (!cardOpen) return;
